@@ -1,0 +1,36 @@
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { strings } from '../i18n/strings';
+
+const LangContext = createContext(null);
+
+export function LangProvider({ children }) {
+  const [lang, setLangState] = useState(() => {
+    const saved = localStorage.getItem('qlai_lang');
+    return Object.prototype.hasOwnProperty.call(strings, saved) ? saved : 'ar';
+  });
+
+  const setLang = (nextLang) => {
+    if (Object.prototype.hasOwnProperty.call(strings, nextLang)) setLangState(nextLang);
+  };
+
+  useEffect(() => {
+    localStorage.setItem('qlai_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = strings[lang].dir;
+  }, [lang]);
+
+  const value = useMemo(() => ({
+    lang,
+    setLang,
+    dir: strings[lang].dir,
+    t: (key) => strings[lang][key] ?? key
+  }), [lang]);
+
+  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
+}
+
+export function useLang() {
+  const ctx = useContext(LangContext);
+  if (!ctx) throw new Error('useLang must be used within LangProvider');
+  return ctx;
+}
